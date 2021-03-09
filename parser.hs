@@ -107,12 +107,14 @@ natural = token nat
 symbol :: String -> Parser String
 symbol xs = token (string xs)
 
+-- exercise 01
 int :: Parser Int
 int =
   (sat (== '-') +++ return ' ') >>= \sign ->
   many (sat isDigit) >>= \xs ->
   return (read (sign:xs))
 
+-- exercise 02
 comment :: Parser ()
 comment =
   many (sat (== '-')) >>
@@ -123,18 +125,24 @@ comment =
 expr :: Parser Int
 expr =
   term >>= \t ->
-              (symbol "+" >>
-               expr >>= \e ->
-               return (t + e))
+        (symbol "+" >>
+        expr >>= \e ->
+        return (t + e)) +++
+        (symbol "-" >>
+        expr >>= \e ->
+        return (t - e))
   +++ return t
 
 term :: Parser Int
 term =
-  factor >>= \f ->
+  factorExp >>= \f ->
         (symbol "*" >>
         term >>= \t ->
         return (f * t)) +++
-  return f
+        (symbol "/" >>
+        term >>= \t ->
+        return (f `div` t))
+  +++ return f
 
 factor :: Parser Int
 factor =
@@ -144,8 +152,17 @@ factor =
    return e) +++
   natural
 
+factorExp :: Parser Int
+factorExp =
+  factor >>= \f ->
+   (symbol "^" >>
+    factor >>= \f1 ->
+    return (f ^ f1))
+  +++ return f
+
 eval :: String -> Int
 eval xs = case parse expr xs of
   [(n, [])] -> n
   [(_, out)] -> error("unused input" ++ out)
   [] -> error "invalid input"
+
